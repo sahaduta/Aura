@@ -102,7 +102,7 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
         val request = TdApi.CreateForumTopic(chatId, name, false, TdApi.ForumTopicIcon())
         client?.send(request) { result ->
             if (result is TdApi.ForumTopicInfo) {
-                cont.resume(Result.success(result.messageThreadId))
+                cont.resume(Result.success(result.forumTopicId.toLong()))
             } else if (result is TdApi.Error) {
                 cont.resume(Result.failure(Exception(result.message)))
             } else {

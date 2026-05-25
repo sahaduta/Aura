@@ -99,7 +99,7 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
     }
 
     suspend fun createForumTopic(chatId: Long, name: String): Result<Long> = suspendCoroutine { cont ->
-        val request = TdApi.CreateForumTopic(chatId, name, TdApi.ForumTopicIcon())
+        val request = TdApi.CreateForumTopic(chatId, name, false, TdApi.ForumTopicIcon())
         client?.send(request) { result ->
             if (result is TdApi.ForumTopicInfo) {
                 cont.resume(Result.success(result.messageThreadId))
@@ -121,7 +121,7 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
         
         val request = TdApi.SendMessage(
             chatId,
-            threadId,
+            if (threadId > 0) TdApi.MessageTopicForum(threadId.toInt()) else null,
             null,
             null,
             null,

@@ -27,6 +27,15 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
     private val _authState = MutableStateFlow(AuthState.INITIALIZING)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
+    private val _passwordHint = MutableStateFlow<String?>(null)
+    val passwordHint: StateFlow<String?> = _passwordHint.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private val _isProcessing = MutableStateFlow(false)
+    val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
+
     // Replace these with your own from my.telegram.org
     private val API_ID = 94575
     private val API_HASH = "a3406de8d171bb422bb6ddf3bbd800e2"
@@ -67,18 +76,25 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
             }
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 _authState.value = AuthState.WAIT_PHONE_NUMBER
+                _isProcessing.value = false
             }
             TdApi.AuthorizationStateWaitCode.CONSTRUCTOR -> {
                 _authState.value = AuthState.WAIT_CODE
+                _isProcessing.value = false
             }
             TdApi.AuthorizationStateWaitPassword.CONSTRUCTOR -> {
+                val waitPasswordState = state as TdApi.AuthorizationStateWaitPassword
+                _passwordHint.value = waitPasswordState.passwordHint.takeIf { it.isNotEmpty() }
                 _authState.value = AuthState.WAIT_PASSWORD
+                _isProcessing.value = false
             }
             TdApi.AuthorizationStateReady.CONSTRUCTOR -> {
                 _authState.value = AuthState.AUTHENTICATED
+                _isProcessing.value = false
             }
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
                 Log.i("TelegramManager", "TDLib connection closed")
+                _isProcessing.value = false
             }
             else -> {
                 Log.d("TelegramManager", "Unhandled auth state: \${state.javaClass.simpleName}")
@@ -87,15 +103,39 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
     }
 
     fun setPhoneNumber(phoneNumber: String) {
-        client?.send(TdApi.SetAuthenticationPhoneNumber(phoneNumber, null), this)
+        _isProcessing.value = true
+        _errorMessage.value = null
+        client?.send(TdApi.SetAuthenticationPhoneNumber(phoneNumber, null)) { result ->
+            _isProcessing.value = false
+            if (result is TdApi.Error) {
+                Log.e("TelegramManager", "Set phone number failed: ${result.message}")
+                _errorMessage.value = result.message
+            }
+        }
     }
 
     fun checkCode(code: String) {
-        client?.send(TdApi.CheckAuthenticationCode(code), this)
+        _isProcessing.value = true
+        _errorMessage.value = null
+        client?.send(TdApi.CheckAuthenticationCode(code)) { result ->
+            _isProcessing.value = false
+            if (result is TdApi.Error) {
+                Log.e("TelegramManager", "Check code failed: ${result.message}")
+                _errorMessage.value = result.message
+            }
+        }
     }
 
     fun checkPassword(password: String) {
-        client?.send(TdApi.CheckAuthenticationPassword(password), this)
+        _isProcessing.value = true
+        _errorMessage.value = null
+        client?.send(TdApi.CheckAuthenticationPassword(password)) { result ->
+            _isProcessing.value = false
+            if (result is TdApi.Error) {
+                Log.e("TelegramManager", "Check password failed: ${result.message}")
+                _errorMessage.value = result.message
+            }
+        }
     }
 
     suspend fun createForumTopic(chatId: Long, name: String): Result<Long> = suspendCoroutine { cont ->

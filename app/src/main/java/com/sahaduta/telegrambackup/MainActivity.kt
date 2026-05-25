@@ -88,23 +88,62 @@ fun AppContent(telegramManager: TelegramManager) {
 @Composable
 fun PhoneLoginScreen(telegramManager: TelegramManager) {
     var phoneInput by remember { mutableStateOf("") }
+    val isProcessing by telegramManager.isProcessing.collectAsState()
+    val errorMessage by telegramManager.errorMessage.collectAsState()
     
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Login to Telegram (Burner Account)", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 32.dp))
+        Text(
+            text = "Login to Telegram", 
+            style = MaterialTheme.typography.headlineMedium, 
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "Enter the burner account phone number that will back up your media.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
         
         OutlinedTextField(
             value = phoneInput,
             onValueChange = { phoneInput = it },
             label = { Text("Phone Number (with Country Code)") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            placeholder = { Text("+1234567890") },
+            enabled = !isProcessing,
+            isError = errorMessage != null,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
+
+        if (errorMessage != null) {
+            Text(
+                text = "Error: $errorMessage",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
-        Button(onClick = { telegramManager.setPhoneNumber(phoneInput) }, modifier = Modifier.fillMaxWidth()) {
-            Text("Send SMS Code")
+        Button(
+            onClick = { telegramManager.setPhoneNumber(phoneInput) }, 
+            enabled = !isProcessing && phoneInput.isNotBlank(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isProcessing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Send SMS Code")
+            }
         }
     }
 }
@@ -113,23 +152,62 @@ fun PhoneLoginScreen(telegramManager: TelegramManager) {
 @Composable
 fun CodeInputScreen(telegramManager: TelegramManager) {
     var codeInput by remember { mutableStateOf("") }
+    val isProcessing by telegramManager.isProcessing.collectAsState()
+    val errorMessage by telegramManager.errorMessage.collectAsState()
     
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Enter the code from Telegram/SMS", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 32.dp))
+        Text(
+            text = "Enter Verification Code", 
+            style = MaterialTheme.typography.headlineMedium, 
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "A code was sent via Telegram or SMS to your phone number.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 32.dp)
+        )
         
         OutlinedTextField(
             value = codeInput,
             onValueChange = { codeInput = it },
             label = { Text("Auth Code") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            placeholder = { Text("12345") },
+            enabled = !isProcessing,
+            isError = errorMessage != null,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
+
+        if (errorMessage != null) {
+            Text(
+                text = "Error: $errorMessage",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
-        Button(onClick = { telegramManager.checkCode(codeInput) }, modifier = Modifier.fillMaxWidth()) {
-            Text("Verify")
+        Button(
+            onClick = { telegramManager.checkCode(codeInput) }, 
+            enabled = !isProcessing && codeInput.isNotBlank(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isProcessing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Verify Code")
+            }
         }
     }
 }
@@ -138,24 +216,88 @@ fun CodeInputScreen(telegramManager: TelegramManager) {
 @Composable
 fun PasswordInputScreen(telegramManager: TelegramManager) {
     var passwordInput by remember { mutableStateOf("") }
+    val isProcessing by telegramManager.isProcessing.collectAsState()
+    val errorMessage by telegramManager.errorMessage.collectAsState()
+    val passwordHint by telegramManager.passwordHint.collectAsState()
     
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Enter 2-Step Verification Password", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 32.dp))
+        Text(
+            text = "Two-Step Verification", 
+            style = MaterialTheme.typography.headlineMedium, 
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "Your Telegram account is protected by an additional cloud password.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        if (!passwordHint.isNullOrEmpty()) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Password Hint:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = passwordHint ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
         OutlinedTextField(
             value = passwordInput,
             onValueChange = { passwordInput = it },
-            label = { Text("Password") },
+            label = { Text("Cloud Password") },
+            enabled = !isProcessing,
+            isError = errorMessage != null,
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
+
+        if (errorMessage != null) {
+            Text(
+                text = "Error: $errorMessage",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         
-        Button(onClick = { telegramManager.checkPassword(passwordInput) }, modifier = Modifier.fillMaxWidth()) {
-            Text("Verify")
+        Button(
+            onClick = { telegramManager.checkPassword(passwordInput) }, 
+            enabled = !isProcessing && passwordInput.isNotBlank(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isProcessing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Verify Password")
+            }
         }
     }
 }

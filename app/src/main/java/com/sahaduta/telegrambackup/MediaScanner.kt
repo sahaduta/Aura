@@ -54,18 +54,20 @@ class MediaScanner(private val context: Context) {
             selectionArgs,
             sortOrder
         )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
-            val bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
-            val mimeTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
+            val idColumn = cursor.getColumnIndex(MediaStore.MediaColumns._ID)
+            val nameColumn = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+            val dateAddedColumn = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)
+            val bucketColumn = cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
+            val mimeTypeColumn = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
 
             while (cursor.moveToNext()) {
+                if (idColumn == -1) continue
+                
                 val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn) ?: "Unknown"
-                val dateAdded = cursor.getLong(dateAddedColumn)
-                val bucketName = cursor.getString(bucketColumn) ?: "Misc"
-                val mimeType = cursor.getString(mimeTypeColumn) ?: "*/*"
+                val name = if (nameColumn != -1) cursor.getString(nameColumn) ?: "Unknown" else "Unknown"
+                val dateAdded = if (dateAddedColumn != -1) cursor.getLong(dateAddedColumn) else 0L
+                val bucketName = if (bucketColumn != -1) cursor.getString(bucketColumn) ?: "Misc" else "Misc"
+                val mimeType = if (mimeTypeColumn != -1) cursor.getString(mimeTypeColumn) ?: "*/*" else "*/*"
 
                 val contentUri: Uri = ContentUris.withAppendedId(collection, id)
 

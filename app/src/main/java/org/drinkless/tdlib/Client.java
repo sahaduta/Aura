@@ -13,6 +13,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * Main class for interaction with the TDLib.
  */
 public final class Client {
+    static {
+        try {
+            System.loadLibrary("cryptox");
+            System.loadLibrary("sslx");
+            System.loadLibrary("tdjni");
+        } catch (UnsatisfiedLinkError e) {
+            System.err.println("Failed to load native libraries: " + e.getMessage());
+        }
+    }
     /**
      * Interface for handler for results of queries to TDLib and incoming updates from TDLib.
      */

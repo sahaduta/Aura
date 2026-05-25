@@ -20,7 +20,18 @@ enum class AuthState {
     ERROR
 }
 
-class TelegramManager(private val context: Context) : Client.ResultHandler {
+class TelegramManager private constructor(private val context: Context) : Client.ResultHandler {
+
+    companion object {
+        @Volatile
+        private var INSTANCE: TelegramManager? = null
+
+        fun getInstance(context: Context): TelegramManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: TelegramManager(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
 
     private var client: Client? = null
     
@@ -95,6 +106,8 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
                 Log.i("TelegramManager", "TDLib connection closed")
                 _isProcessing.value = false
+                _authState.value = AuthState.INITIALIZING
+                client = Client.create(this, null, null)
             }
             else -> {
                 Log.d("TelegramManager", "Unhandled auth state: \${state.javaClass.simpleName}")
@@ -175,6 +188,30 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
                 cont.resume(Result.failure(Exception(result.message)))
             } else {
                 cont.resume(Result.failure(Exception("Unknown error")))
+            }
+        }
+    }
+
+    suspend fun getMe(): Result<TdApi.User> = suspendCoroutine { cont ->
+        client?.send(TdApi.GetMe()) { result ->
+            if (result is TdApi.User) {
+                cont.resume(Result.success(result))
+            } else if (result is TdApi.Error) {
+                cont.resume(Result.failure(Exception(result.message)))
+            } else {
+                cont.resume(Result.failure(Exception("Unknown response")))
+            }
+        }
+    }
+
+    fun logOut() {
+        _isProcessing.value = true
+        _errorMessage.value = null
+        client?.send(TdApi.LogOut()) { result ->
+            _isProcessing.value = false
+            if (result is TdApi.Error) {
+                Log.e("TelegramManager", "Logout failed: ${result.message}")
+                _errorMessage.value = result.message
             }
         }
     }

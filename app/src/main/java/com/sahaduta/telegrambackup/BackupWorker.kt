@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 class BackupWorker(
     private val context: Context,
@@ -13,36 +15,55 @@ class BackupWorker(
 
     override suspend fun doWork(): Result {
         val preferencesManager = PreferencesManager(context)
-        val telegramManager = TelegramManager(context)
+        val telegramManager = TelegramManager.getInstance(context)
         val mediaScanner = MediaScanner(context)
 
-        // Wait a brief moment to ensure TDLib initializes and checks auth state
-        kotlinx.coroutines.delay(2000)
+        preferencesManager.saveSyncingActive(true)
+        preferencesManager.saveSyncStatus("Initializing TDLib...")
+        preferencesManager.saveSyncError("")
 
-        val authState = telegramManager.authState.firstOrNull()
+        // Wait for TDLib auth state to resolve past INITIALIZING
+        val authState = withTimeoutOrNull(10000) {
+            telegramManager.authState.first { it != AuthState.INITIALIZING }
+        } ?: AuthState.INITIALIZING
+
         if (authState != AuthState.AUTHENTICATED) {
-            Log.e("BackupWorker", "TDLib is not authenticated! State: \$authState")
+            Log.e("BackupWorker", "TDLib is not authenticated! State: $authState")
+            preferencesManager.saveSyncStatus("Failed")
+            preferencesManager.saveSyncError("Telegram not logged in!")
+            preferencesManager.saveSyncingActive(false)
             return Result.failure()
         }
 
         val chatIdString = preferencesManager.chatIdFlow.firstOrNull()
         if (chatIdString.isNullOrBlank()) {
             Log.e("BackupWorker", "Target Chat ID is missing.")
+            preferencesManager.saveSyncStatus("Failed")
+            preferencesManager.saveSyncError("Target Group Chat ID is missing.")
+            preferencesManager.saveSyncingActive(false)
             return Result.failure()
         }
         val chatId = chatIdString.toLongOrNull() ?: return Result.failure()
 
+        preferencesManager.saveSyncStatus("Scanning media...")
         val lastSyncTime = preferencesManager.lastSyncTimeFlow.firstOrNull() ?: 0L
         val newMedia = mediaScanner.getNewMedia(lastSyncTime)
 
         if (newMedia.isEmpty()) {
             Log.d("BackupWorker", "No new media to backup.")
+            preferencesManager.saveSyncStatus("Idle")
+            preferencesManager.saveSyncProgress("All media is backed up.")
+            preferencesManager.saveSyncingActive(false)
             return Result.success()
         }
 
+        preferencesManager.saveSyncStatus("Uploading...")
         var highestDateAdded = lastSyncTime
+        val totalFiles = newMedia.size
 
-        for (media in newMedia) {
+        for ((index, media) in newMedia.withIndex()) {
+            val progressText = "Uploading file ${index + 1} of $totalFiles: ${media.name}"
+            preferencesManager.saveSyncProgress(progressText)
             val folderName = media.bucketName ?: "Misc"
             
             // Get or Create Topic
@@ -57,18 +78,10 @@ class BackupWorker(
                         preferencesManager.saveTopicId(folderName, topicId)
                     }
                 } else {
-                    Log.e("BackupWorker", "Failed to create topic for \$folderName", topicResult.exceptionOrNull())
-                    // If creating topic fails, it might be because topics aren't enabled.
-                    // We can proceed to upload without a topicId.
+                    Log.e("BackupWorker", "Failed to create topic for $folderName", topicResult.exceptionOrNull())
                 }
             }
 
-            // Upload Document via TDLib (Handles up to 2GB natively)
-            // Note: input message document requires absolute file path, which MediaStore uri doesn't provide directly.
-            // But we can try to use the Uri directly if TDLib supports it, or resolve the true path.
-            // Since Android 10+, getting absolute paths is hard. 
-            // A robust solution for TDLib is to copy the Uri to a temporary cache file, then pass that path to TDLib.
-            
             val tempFile = java.io.File(context.cacheDir, media.name)
             try {
                 context.contentResolver.openInputStream(media.uri)?.use { input ->
@@ -88,13 +101,20 @@ class BackupWorker(
                         highestDateAdded = media.dateAdded
                         preferencesManager.saveLastSyncTime(highestDateAdded)
                     }
-                    Log.d("BackupWorker", "Successfully backed up: \${media.name}")
+                    Log.d("BackupWorker", "Successfully backed up: ${media.name}")
                 } else {
-                    Log.e("BackupWorker", "Failed to upload: \${media.name}", uploadResult.exceptionOrNull())
+                    Log.e("BackupWorker", "Failed to upload: ${media.name}", uploadResult.exceptionOrNull())
+                    preferencesManager.saveSyncStatus("Failed")
+                    preferencesManager.saveSyncError("Failed to upload: ${media.name}")
+                    preferencesManager.saveSyncingActive(false)
                     return Result.retry()
                 }
             } catch (e: Exception) {
-                Log.e("BackupWorker", "File copy error: \${media.name}", e)
+                Log.e("BackupWorker", "File copy error: ${media.name}", e)
+                preferencesManager.saveSyncStatus("Failed")
+                preferencesManager.saveSyncError("File copy error: ${e.message}")
+                preferencesManager.saveSyncingActive(false)
+                return Result.retry()
             } finally {
                 if (tempFile.exists()) {
                     tempFile.delete() // Clean up temp file
@@ -102,6 +122,9 @@ class BackupWorker(
             }
         }
 
+        preferencesManager.saveSyncStatus("Success")
+        preferencesManager.saveSyncProgress("All files backed up successfully!")
+        preferencesManager.saveSyncingActive(false)
         return Result.success()
     }
 }

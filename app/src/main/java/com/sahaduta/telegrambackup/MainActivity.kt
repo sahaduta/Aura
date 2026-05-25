@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         requestPermissions()
-        telegramManager = TelegramManager(this)
+        telegramManager = TelegramManager.getInstance(this)
 
         setContent {
             MaterialTheme {
@@ -74,7 +74,7 @@ fun AppContent(telegramManager: TelegramManager) {
             PasswordInputScreen(telegramManager)
         }
         AuthState.AUTHENTICATED -> {
-            DashboardScreen()
+            DashboardScreen(telegramManager)
         }
         AuthState.ERROR -> {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -304,60 +304,192 @@ fun PasswordInputScreen(telegramManager: TelegramManager) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(telegramManager: TelegramManager) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val preferencesManager = remember { PreferencesManager(context) }
     
     val savedChatId by preferencesManager.chatIdFlow.collectAsState(initial = "")
     var chatIdInput by remember(savedChatId) { mutableStateOf(savedChatId ?: "") }
-    var isSaved by remember { mutableStateOf(false) }
+    
+    // Sync states
+    val syncStatus by preferencesManager.syncStatusFlow.collectAsState(initial = "Idle")
+    val syncProgress by preferencesManager.syncProgressFlow.collectAsState(initial = "")
+    val syncError by preferencesManager.syncErrorFlow.collectAsState(initial = "")
+    val syncingActive by preferencesManager.syncingActiveFlow.collectAsState(initial = false)
+    val lastSyncTime by preferencesManager.lastSyncTimeFlow.collectAsState(initial = 0L)
+
+    // User profile state
+    var telegramUser by remember { mutableStateOf<org.drinkless.tdlib.TdApi.User?>(null) }
+    
+    LaunchedEffect(Unit) {
+        val result = telegramManager.getMe()
+        if (result.isSuccess) {
+            telegramUser = result.getOrNull()
+        }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
+        // --- Profile Section ---
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp, bottom = 24.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar placeholder
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .padding(end = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(color = androidx.compose.ui.graphics.Color(0xFF6200EE))
+                    }
+                    val initial = telegramUser?.firstName?.firstOrNull()?.toString() ?: "?"
+                    Text(
+                        text = initial,
+                        color = androidx.compose.ui.graphics.Color.White,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (telegramUser != null) "${telegramUser?.firstName} ${telegramUser?.lastName ?: ""}".trim() else "Loading...",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = if (telegramUser != null) "+${telegramUser?.phoneNumber}" else "...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+                
+                TextButton(onClick = { telegramManager.logOut() }) {
+                    Text("Log Out", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+
         Text(
-            text = "Telegram TDLib Connected!",
-            style = MaterialTheme.typography.headlineMedium,
+            text = "Target Configuration",
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 32.dp)
+            modifier = Modifier
+                .align(Alignment.Start)
+                .padding(bottom = 8.dp)
         )
 
         OutlinedTextField(
             value = chatIdInput,
-            onValueChange = { chatIdInput = it; isSaved = false },
-            label = { Text("Target Group Chat ID (e.g. -100...)") },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+            onValueChange = { chatIdInput = it },
+            label = { Text("Group Chat ID (e.g. -100...)") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         )
 
         Button(
             onClick = {
                 scope.launch {
-                    preferencesManager.saveCredentials("", chatIdInput) // Bot token no longer needed
-                    isSaved = true
+                    preferencesManager.saveCredentials("", chatIdInput)
                     schedulePeriodicBackup(context)
                 }
             },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
         ) {
             Text("Save & Enable Auto-Backup (2GB Limit)")
         }
 
+        // --- Live Sync Status Card ---
+        Text(
+            text = "Live Sync Status",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .align(Alignment.Start)
+                .padding(bottom = 8.dp)
+        )
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (syncingActive) MaterialTheme.colorScheme.primaryContainer 
+                               else MaterialTheme.colorScheme.surfaceVariant
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = syncStatus,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (syncStatus == "Failed") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                    if (syncingActive) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+                
+                if (syncProgress.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = syncProgress,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                if (syncError.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = syncError,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                if (!syncingActive && lastSyncTime > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val date = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(lastSyncTime))
+                    Text(
+                        text = "Last Sync: $date",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+
         Button(
             onClick = { triggerImmediateBackup(context) },
+            enabled = !syncingActive && chatIdInput.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Sync Now")
-        }
-        
-        if (isSaved) {
-            Text(
-                text = "Group Chat ID saved and background service scheduled!",
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 16.dp)
-            )
+            Text(if (syncingActive) "Syncing..." else "Sync Now")
         }
     }
 }

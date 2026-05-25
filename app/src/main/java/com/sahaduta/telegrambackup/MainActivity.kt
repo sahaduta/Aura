@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions -> }
 
-    private lateinit val telegramManager: TelegramManager
+    private lateinit var telegramManager: TelegramManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

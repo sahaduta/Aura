@@ -43,9 +43,9 @@ class MediaScanner(private val context: Context) {
         )
 
         // DATE_ADDED is in seconds in MediaStore, so we divide lastSyncTime by 1000 if lastSyncTime is in milliseconds.
-        val selection = "\${MediaStore.MediaColumns.DATE_ADDED} > ?"
+        val selection = "${MediaStore.MediaColumns.DATE_ADDED} > ?"
         val selectionArgs = arrayOf((lastSyncTime / 1000).toString())
-        val sortOrder = "\${MediaStore.MediaColumns.DATE_ADDED} ASC"
+        val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} ASC"
 
         context.contentResolver.query(
             collection,

@@ -61,7 +61,7 @@ class TelegramManager(private val context: Context) : Client.ResultHandler {
                 parameters.systemLanguageCode = "en"
                 parameters.deviceModel = "Android"
                 parameters.applicationVersion = "1.0"
-                parameters.enableStorageOptimizer = true
+                parameters.databaseEncryptionKey = ByteArray(0)
                 
                 client?.send(parameters, this)
             }

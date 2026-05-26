@@ -19,10 +19,16 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import com.sahaduta.telegrambackup.ui.GalleryScreen
 import com.sahaduta.telegrambackup.ui.PeopleScreen
+import com.sahaduta.telegrambackup.ui.MediaViewerScreen
+import com.sahaduta.telegrambackup.data.MediaEntity
+import com.sahaduta.telegrambackup.ui.theme.AuraTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -44,7 +50,7 @@ class MainActivity : ComponentActivity() {
         telegramManager = TelegramManager.getInstance(this)
 
         setContent {
-            MaterialTheme {
+            AuraTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -88,26 +94,48 @@ fun AppContent(telegramManager: TelegramManager) {
                 Icons.Default.Settings
             )
 
-            Scaffold(
-                bottomBar = {
-                    NavigationBar {
-                        tabs.forEachIndexed { index, title ->
-                            NavigationBarItem(
-                                icon = { Icon(icons[index], contentDescription = title) },
-                                label = { Text(title) },
-                                selected = selectedTab == index,
-                                onClick = { selectedTab = index }
-                            )
+            var viewingMedia by remember { mutableStateOf<MediaEntity?>(null) }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    bottomBar = {
+                        val isDark = isSystemInDarkTheme()
+                        val glassColor = if (isDark) Color(0xAA1C1C1E) else Color(0xEEFFFFFF)
+                        
+                        NavigationBar(
+                            containerColor = glassColor,
+                            tonalElevation = 0.dp,
+                            modifier = Modifier.blur(radius = 16.dp, edgeTreatment = androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded)
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                NavigationBarItem(
+                                    icon = { Icon(icons[index], contentDescription = title) },
+                                    label = { Text(title) },
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            }
+                        }
+                    }
+                ) { innerPadding ->
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        when (selectedTab) {
+                            0 -> GalleryScreen(onMediaClick = { viewingMedia = it })
+                            1 -> PeopleScreen()
+                            2 -> DashboardScreen(telegramManager)
                         }
                     }
                 }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    when (selectedTab) {
-                        0 -> GalleryScreen()
-                        1 -> PeopleScreen()
-                        2 -> DashboardScreen(telegramManager)
-                    }
+
+                // Overlay MediaViewerScreen
+                viewingMedia?.let { media ->
+                    MediaViewerScreen(media = media, onClose = { viewingMedia = null })
                 }
             }
         }

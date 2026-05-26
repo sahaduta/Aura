@@ -1,0 +1,61 @@
+com.sahaduta.telegrambackup.app-lifecycle-runtime-2.7.0-0 /Users/sahaduta/.gradle/caches/transforms-3/0ac486dc0b0f0242aa4b9e157c71b661/transformed/lifecycle-runtime-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-runtime-release-1 /Users/sahaduta/.gradle/caches/transforms-3/10b532bc302e0ba43e77fca0e3e54605/transformed/jetified-runtime-release/res
+com.sahaduta.telegrambackup.app-jetified-activity-compose-1.8.2-2 /Users/sahaduta/.gradle/caches/transforms-3/139076117957c4d4c74a9826142f1ba5/transformed/jetified-activity-compose-1.8.2/res
+com.sahaduta.telegrambackup.app-work-runtime-2.9.0-3 /Users/sahaduta/.gradle/caches/transforms-3/1cba7b0a3bd516aac12a821b511e4394/transformed/work-runtime-2.9.0/res
+com.sahaduta.telegrambackup.app-lifecycle-livedata-2.7.0-4 /Users/sahaduta/.gradle/caches/transforms-3/23fc0fcb653fb39a5ddf365e1fd694c0/transformed/lifecycle-livedata-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-lifecycle-livedata-core-ktx-2.7.0-5 /Users/sahaduta/.gradle/caches/transforms-3/24f87237b5e5b123845ec43833ed01d3/transformed/jetified-lifecycle-livedata-core-ktx-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-material-icons-core-release-6 /Users/sahaduta/.gradle/caches/transforms-3/27e37b4226ede7d728732c3b551c3e3e/transformed/jetified-material-icons-core-release/res
+com.sahaduta.telegrambackup.app-sqlite-2.4.0-7 /Users/sahaduta/.gradle/caches/transforms-3/2c54d503967d6ec7e4fa580d8748d55a/transformed/sqlite-2.4.0/res
+com.sahaduta.telegrambackup.app-jetified-core-ktx-1.12.0-8 /Users/sahaduta/.gradle/caches/transforms-3/33c723cc756ce4626c81d7a755482df4/transformed/jetified-core-ktx-1.12.0/res
+com.sahaduta.telegrambackup.app-jetified-room-ktx-2.6.1-9 /Users/sahaduta/.gradle/caches/transforms-3/3f9a990ea87f76b0dc48589d07e666b5/transformed/jetified-room-ktx-2.6.1/res
+com.sahaduta.telegrambackup.app-jetified-ui-unit-release-10 /Users/sahaduta/.gradle/caches/transforms-3/42cd2ea9059b0b08fcf40a12d48cbcd8/transformed/jetified-ui-unit-release/res
+com.sahaduta.telegrambackup.app-jetified-lifecycle-viewmodel-ktx-2.7.0-11 /Users/sahaduta/.gradle/caches/transforms-3/43bae6e0a7c88492e266be62b0eca4fe/transformed/jetified-lifecycle-viewmodel-ktx-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-activity-1.8.2-12 /Users/sahaduta/.gradle/caches/transforms-3/45866ae51e0dabc6e5d56ff9c52d7723/transformed/jetified-activity-1.8.2/res
+com.sahaduta.telegrambackup.app-jetified-lifecycle-service-2.7.0-13 /Users/sahaduta/.gradle/caches/transforms-3/4b812f7eaea312a1dc0d08c92a48d619/transformed/jetified-lifecycle-service-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-foundation-layout-release-14 /Users/sahaduta/.gradle/caches/transforms-3/4f87846cf9e2abdfd470c4390d993e98/transformed/jetified-foundation-layout-release/res
+com.sahaduta.telegrambackup.app-jetified-ui-geometry-release-15 /Users/sahaduta/.gradle/caches/transforms-3/53c20eb66d161887dcfad0851d49ff95/transformed/jetified-ui-geometry-release/res
+com.sahaduta.telegrambackup.app-jetified-savedstate-ktx-1.2.1-16 /Users/sahaduta/.gradle/caches/transforms-3/56512eb8af3bd0064bd65ffa4fe627af/transformed/jetified-savedstate-ktx-1.2.1/res
+com.sahaduta.telegrambackup.app-jetified-appcompat-resources-1.6.1-17 /Users/sahaduta/.gradle/caches/transforms-3/56f2a29d4e775c271d0c1cb8463e5543/transformed/jetified-appcompat-resources-1.6.1/res
+com.sahaduta.telegrambackup.app-jetified-annotation-experimental-1.3.0-18 /Users/sahaduta/.gradle/caches/transforms-3/5801994c69145feac8011e084dc4e01f/transformed/jetified-annotation-experimental-1.3.0/res
+com.sahaduta.telegrambackup.app-core-runtime-2.2.0-19 /Users/sahaduta/.gradle/caches/transforms-3/595ccc2d7ce7e7f9db5f475fee1c93c8/transformed/core-runtime-2.2.0/res
+com.sahaduta.telegrambackup.app-lifecycle-livedata-core-2.7.0-20 /Users/sahaduta/.gradle/caches/transforms-3/5978bba4e6e205aaebc23f6a46adfe72/transformed/lifecycle-livedata-core-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-material3-1.1.2-21 /Users/sahaduta/.gradle/caches/transforms-3/59eb3f9c50a171ca4408634bc02caa1e/transformed/jetified-material3-1.1.2/res
+com.sahaduta.telegrambackup.app-jetified-ui-tooling-preview-release-22 /Users/sahaduta/.gradle/caches/transforms-3/5b805cf96e1eff5bf451a90e0dfdd885/transformed/jetified-ui-tooling-preview-release/res
+com.sahaduta.telegrambackup.app-jetified-play-services-basement-18.1.0-23 /Users/sahaduta/.gradle/caches/transforms-3/5ca6a77e09077e46f72d3bba54bc0f38/transformed/jetified-play-services-basement-18.1.0/res
+com.sahaduta.telegrambackup.app-sqlite-framework-2.4.0-24 /Users/sahaduta/.gradle/caches/transforms-3/5d8e38683874595a4a3757b0c8905703/transformed/sqlite-framework-2.4.0/res
+com.sahaduta.telegrambackup.app-jetified-material-ripple-release-25 /Users/sahaduta/.gradle/caches/transforms-3/60b77805fc78d69c4abbb7fad563e62e/transformed/jetified-material-ripple-release/res
+com.sahaduta.telegrambackup.app-jetified-emoji2-1.4.0-26 /Users/sahaduta/.gradle/caches/transforms-3/6574bd87862c3ce90c9002237ea83fc5/transformed/jetified-emoji2-1.4.0/res
+com.sahaduta.telegrambackup.app-jetified-ui-graphics-release-27 /Users/sahaduta/.gradle/caches/transforms-3/6ac76f5b5051cad908542d296888136d/transformed/jetified-ui-graphics-release/res
+com.sahaduta.telegrambackup.app-jetified-foundation-release-28 /Users/sahaduta/.gradle/caches/transforms-3/7bfa2bd56853fd858b80b53b3e12075c/transformed/jetified-foundation-release/res
+com.sahaduta.telegrambackup.app-jetified-ui-text-release-29 /Users/sahaduta/.gradle/caches/transforms-3/80c0a97df2c188e96c4e7bb53fd55fc4/transformed/jetified-ui-text-release/res
+com.sahaduta.telegrambackup.app-jetified-customview-poolingcontainer-1.0.0-30 /Users/sahaduta/.gradle/caches/transforms-3/8857c2ad33aa3966b8a38d7cdb42417a/transformed/jetified-customview-poolingcontainer-1.0.0/res
+com.sahaduta.telegrambackup.app-jetified-activity-ktx-1.8.2-31 /Users/sahaduta/.gradle/caches/transforms-3/8e05c665a624ecfb9a2f5b5be9ee1fe0/transformed/jetified-activity-ktx-1.8.2/res
+com.sahaduta.telegrambackup.app-jetified-ui-util-release-32 /Users/sahaduta/.gradle/caches/transforms-3/9a56213ce9d449212b37663ca270fa08/transformed/jetified-ui-util-release/res
+com.sahaduta.telegrambackup.app-fragment-1.3.6-33 /Users/sahaduta/.gradle/caches/transforms-3/a2a043cfbb54134e631329f0bbca56bd/transformed/fragment-1.3.6/res
+com.sahaduta.telegrambackup.app-jetified-savedstate-1.2.1-34 /Users/sahaduta/.gradle/caches/transforms-3/a635097430d18b9444ec6fff4400f880/transformed/jetified-savedstate-1.2.1/res
+com.sahaduta.telegrambackup.app-core-1.12.0-35 /Users/sahaduta/.gradle/caches/transforms-3/a80ca45a17d8d157825d4a4182d12dd8/transformed/core-1.12.0/res
+com.sahaduta.telegrambackup.app-jetified-profileinstaller-1.3.1-36 /Users/sahaduta/.gradle/caches/transforms-3/ac3d20bfbb254c76763b9bd3f64eec8b/transformed/jetified-profileinstaller-1.3.1/res
+com.sahaduta.telegrambackup.app-jetified-lifecycle-viewmodel-savedstate-2.7.0-37 /Users/sahaduta/.gradle/caches/transforms-3/ace0f294e2140bf6bb5f589cd799a32c/transformed/jetified-lifecycle-viewmodel-savedstate-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-runtime-saveable-release-38 /Users/sahaduta/.gradle/caches/transforms-3/b5b590e3d5cf841697d1400b7677d95a/transformed/jetified-runtime-saveable-release/res
+com.sahaduta.telegrambackup.app-lifecycle-viewmodel-2.7.0-39 /Users/sahaduta/.gradle/caches/transforms-3/b9e2921c834e6bf9ef34a92d7efc5d0d/transformed/lifecycle-viewmodel-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-material-icons-extended-release-40 /Users/sahaduta/.gradle/caches/transforms-3/c304293cf28a2262b21bccd714b4321f/transformed/jetified-material-icons-extended-release/res
+com.sahaduta.telegrambackup.app-jetified-lifecycle-runtime-ktx-2.7.0-41 /Users/sahaduta/.gradle/caches/transforms-3/c81388b4e519101458dbe0558ab9f045/transformed/jetified-lifecycle-runtime-ktx-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-datastore-1.0.0-42 /Users/sahaduta/.gradle/caches/transforms-3/cb0e6ea1db74df73b287eb37a84d737d/transformed/jetified-datastore-1.0.0/res
+com.sahaduta.telegrambackup.app-jetified-emoji2-views-helper-1.4.0-43 /Users/sahaduta/.gradle/caches/transforms-3/d5b5911d1b4150ba380677e402733eed/transformed/jetified-emoji2-views-helper-1.4.0/res
+com.sahaduta.telegrambackup.app-room-runtime-2.6.1-44 /Users/sahaduta/.gradle/caches/transforms-3/dada826961c3578e0af129baa8c6f862/transformed/room-runtime-2.6.1/res
+com.sahaduta.telegrambackup.app-jetified-ui-release-45 /Users/sahaduta/.gradle/caches/transforms-3/de7bec30dc43dab167977d1180077565/transformed/jetified-ui-release/res
+com.sahaduta.telegrambackup.app-jetified-startup-runtime-1.1.1-46 /Users/sahaduta/.gradle/caches/transforms-3/df4b481657450412d3da8902d3ba1901/transformed/jetified-startup-runtime-1.1.1/res
+com.sahaduta.telegrambackup.app-jetified-play-services-base-18.1.0-47 /Users/sahaduta/.gradle/caches/transforms-3/eb477060d7b15bd0074b044ce39a0c47/transformed/jetified-play-services-base-18.1.0/res
+com.sahaduta.telegrambackup.app-jetified-lifecycle-process-2.7.0-48 /Users/sahaduta/.gradle/caches/transforms-3/eda4c7e18a64f0ed61203f6d3fd2e8a9/transformed/jetified-lifecycle-process-2.7.0/res
+com.sahaduta.telegrambackup.app-jetified-datastore-preferences-1.0.0-49 /Users/sahaduta/.gradle/caches/transforms-3/f6728eba2a4b0d0632e382f1d072febb/transformed/jetified-datastore-preferences-1.0.0/res
+com.sahaduta.telegrambackup.app-work-runtime-ktx-2.9.0-50 /Users/sahaduta/.gradle/caches/transforms-3/f69d20074acca6cc24d48bdcd8d51e18/transformed/work-runtime-ktx-2.9.0/res
+com.sahaduta.telegrambackup.app-jetified-animation-core-release-51 /Users/sahaduta/.gradle/caches/transforms-3/f98dc798036f6d23e04c2d965fbd7896/transformed/jetified-animation-core-release/res
+com.sahaduta.telegrambackup.app-appcompat-1.6.1-52 /Users/sahaduta/.gradle/caches/transforms-3/f9f8cbfba79be88bf9bb18f34dd0b8e8/transformed/appcompat-1.6.1/res
+com.sahaduta.telegrambackup.app-jetified-animation-release-53 /Users/sahaduta/.gradle/caches/transforms-3/fc12826a6cde71f1ac209fe8732c1e34/transformed/jetified-animation-release/res
+com.sahaduta.telegrambackup.app-jetified-coil-base-2.5.0-54 /Users/sahaduta/.gradle/caches/transforms-3/fd9c0bbbd5faad5277beb44917bc3701/transformed/jetified-coil-base-2.5.0/res
+com.sahaduta.telegrambackup.app-resValues-55 /Users/sahaduta/Documents/Me/Code/Project/Auto Backup Android Media to Telegram Channel:Group Chat/app/build/generated/res/resValues/debug
+com.sahaduta.telegrambackup.app-packageDebugResources-56 /Users/sahaduta/Documents/Me/Code/Project/Auto Backup Android Media to Telegram Channel:Group Chat/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.sahaduta.telegrambackup.app-packageDebugResources-57 /Users/sahaduta/Documents/Me/Code/Project/Auto Backup Android Media to Telegram Channel:Group Chat/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.sahaduta.telegrambackup.app-merged_res-58 /Users/sahaduta/Documents/Me/Code/Project/Auto Backup Android Media to Telegram Channel:Group Chat/app/build/intermediates/merged_res/debug
+com.sahaduta.telegrambackup.app-debug-59 /Users/sahaduta/Documents/Me/Code/Project/Auto Backup Android Media to Telegram Channel:Group Chat/app/src/debug/res
+com.sahaduta.telegrambackup.app-main-60 /Users/sahaduta/Documents/Me/Code/Project/Auto Backup Android Media to Telegram Channel:Group Chat/app/src/main/res

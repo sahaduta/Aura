@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.sahaduta.telegrambackup.app-merged_res-59:/xml_backup_rules.xml.flat",
+        "source": "com.sahaduta.telegrambackup.app-main-61:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.sahaduta.telegrambackup.app-merged_res-59:/xml_data_extraction_rules.xml.flat",
+        "source": "com.sahaduta.telegrambackup.app-main-61:/xml/data_extraction_rules.xml"
+    }
+]

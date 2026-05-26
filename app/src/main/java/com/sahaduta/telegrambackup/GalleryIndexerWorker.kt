@@ -46,7 +46,11 @@ class GalleryIndexerWorker(
             setForeground(createForegroundInfo("Scanning for new photos..."))
 
             // 1. Scan for new photos
-            val lastSyncTime = preferencesManager.lastSyncTimeFlow.firstOrNull() ?: 0L
+            var lastSyncTime = preferencesManager.lastSyncTimeFlow.firstOrNull() ?: 0L
+            val mediaCount = database.galleryDao().getMediaCount()
+            if (mediaCount == 0) {
+                lastSyncTime = 0L // Force full scan if DB was wiped
+            }
             val newMedia = mediaScanner.getNewMedia(lastSyncTime)
             
             if (newMedia.isNotEmpty()) {

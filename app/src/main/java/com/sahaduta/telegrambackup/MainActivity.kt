@@ -28,7 +28,12 @@ class MainActivity : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions -> }
+    ) { permissions ->
+        if (permissions.values.any { it }) {
+            // If any storage/media permission was granted, start indexing the local gallery immediately
+            scheduleIndexerWorker(this)
+        }
+    }
 
     private lateinit var telegramManager: TelegramManager
 

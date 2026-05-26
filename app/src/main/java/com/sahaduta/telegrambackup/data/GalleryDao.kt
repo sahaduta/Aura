@@ -11,6 +11,9 @@ interface GalleryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMediaList(mediaList: List<MediaEntity>)
 
+    @Query("SELECT COUNT(*) FROM media_items")
+    suspend fun getMediaCount(): Int
+
     @Query("SELECT * FROM media_items ORDER BY dateAdded DESC")
     fun getAllMediaDesc(): Flow<List<MediaEntity>>
 

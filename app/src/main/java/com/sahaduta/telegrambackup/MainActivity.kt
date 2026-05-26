@@ -29,6 +29,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.isSystemInDarkTheme
+import java.io.File
+import java.io.PrintWriter
+import java.io.StringWriter
+import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
 
@@ -46,11 +50,53 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        requestPermissions()
+        // Setup Global Crash Handler
+        val crashFile = File(getExternalFilesDir(null), "crash_log.txt")
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, exception ->
+            try {
+                val sw = StringWriter()
+                exception.printStackTrace(PrintWriter(sw))
+                crashFile.writeText("CRASH on ${java.util.Date()}:\n\n${sw.toString()}")
+            } catch (e: Exception) {
+                // Ignore
+            }
+            defaultHandler?.uncaughtException(thread, exception)
+            exitProcess(1)
+        }
+
         telegramManager = TelegramManager.getInstance(this)
 
         setContent {
             AuraTheme {
+                val context = LocalContext.current
+                val authState by telegramManager.authState.collectAsState()
+                
+                var showCrashLog by remember { mutableStateOf(crashFile.exists()) }
+                var crashLogText by remember { mutableStateOf(if (crashFile.exists()) crashFile.readText() else "") }
+                
+                if (showCrashLog) {
+                    AlertDialog(
+                        onDismissRequest = { },
+                        title = { Text("App Crashed Previously") },
+                        text = { 
+                            androidx.compose.foundation.lazy.LazyColumn {
+                                item { Text(crashLogText, style = MaterialTheme.typography.bodySmall) }
+                            }
+                        },
+                        confirmButton = {
+                            Button(onClick = { 
+                                crashFile.delete()
+                                showCrashLog = false
+                            }) { Text("Clear Log & Continue") }
+                        }
+                    )
+                }
+
+                LaunchedEffect(Unit) {
+                    requestPermissions()
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

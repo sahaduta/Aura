@@ -8,8 +8,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 enum class AuthState {
     INITIALIZING,
@@ -56,11 +59,21 @@ class TelegramManager private constructor(private val context: Context) : Client
         client = Client.create(this, null, null)
     }
 
+    private val pendingUploads = ConcurrentHashMap<Long, Continuation<Result<Boolean>>>()
+
     override fun onResult(obj: TdApi.Object) {
         when (obj.constructor) {
             TdApi.UpdateAuthorizationState.CONSTRUCTOR -> {
                 val authStateObj = (obj as TdApi.UpdateAuthorizationState).authorizationState
                 handleAuthState(authStateObj)
+            }
+            TdApi.UpdateMessageSendSucceeded.CONSTRUCTOR -> {
+                val update = obj as TdApi.UpdateMessageSendSucceeded
+                pendingUploads.remove(update.oldMessageId)?.resume(Result.success(true))
+            }
+            TdApi.UpdateMessageSendFailed.CONSTRUCTOR -> {
+                val update = obj as TdApi.UpdateMessageSendFailed
+                pendingUploads.remove(update.oldMessageId)?.resume(Result.failure(Exception(update.error.message)))
             }
             else -> {
                 // Handle other updates if needed
@@ -169,11 +182,11 @@ class TelegramManager private constructor(private val context: Context) : Client
         }
     }
 
-    suspend fun sendDocument(chatId: Long, threadId: Long, filePath: String): Result<Boolean> = suspendCoroutine { cont ->
+    suspend fun sendDocumentAndWait(chatId: Long, threadId: Long, filePath: String): Result<Boolean> = suspendCancellableCoroutine { cont ->
         val currentClient = client
         if (currentClient == null) {
             cont.resume(Result.failure(Exception("TDLib client not initialized")))
-            return@suspendCoroutine
+            return@suspendCancellableCoroutine
         }
         val document = TdApi.InputMessageDocument(
             TdApi.InputFileLocal(filePath), 
@@ -193,7 +206,16 @@ class TelegramManager private constructor(private val context: Context) : Client
 
         currentClient.send(request) { result ->
             if (result is TdApi.Message) {
-                cont.resume(Result.success(true))
+                if (result.sendingState == null) {
+                    cont.resume(Result.success(true))
+                } else if (result.sendingState is TdApi.MessageSendingStateFailed) {
+                    cont.resume(Result.failure(Exception("Failed to send immediately")))
+                } else {
+                    pendingUploads[result.id] = cont
+                    cont.invokeOnCancellation { 
+                        pendingUploads.remove(result.id)
+                    }
+                }
             } else if (result is TdApi.Error) {
                 cont.resume(Result.failure(Exception(result.message)))
             } else {

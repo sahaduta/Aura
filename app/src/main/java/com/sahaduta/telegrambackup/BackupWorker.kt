@@ -1,8 +1,13 @@
 package com.sahaduta.telegrambackup
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.first
@@ -13,10 +18,29 @@ class BackupWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
+    private fun createForegroundInfo(progress: String): ForegroundInfo {
+        val channelId = "backup_channel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Backup Progress", NotificationManager.IMPORTANCE_LOW)
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setContentTitle("Telegram Media Backup")
+            .setContentText(progress)
+            .setSmallIcon(android.R.drawable.ic_popup_sync) // default system sync icon
+            .setOngoing(true)
+            .build()
+
+        return ForegroundInfo(1, notification)
+    }
+
     override suspend fun doWork(): Result {
         val preferencesManager = PreferencesManager(context)
         
         try {
+            setForeground(createForegroundInfo("Starting backup..."))
             val telegramManager = TelegramManager.getInstance(context)
             val mediaScanner = MediaScanner(context)
 
@@ -76,6 +100,7 @@ class BackupWorker(
                 val progressText = "Uploading file ${index + 1} of $totalFiles: ${media.name}"
                 Log.d("BackupWorker", progressText)
                 preferencesManager.saveSyncProgress(progressText)
+                setForeground(createForegroundInfo(progressText))
                 val folderName = media.bucketName ?: "Misc"
                 
                 // Get or Create Topic
@@ -115,7 +140,7 @@ class BackupWorker(
                         continue
                     }
                     
-                    val uploadResult = telegramManager.sendDocument(
+                    val uploadResult = telegramManager.sendDocumentAndWait(
                         chatId = chatId,
                         threadId = topicId?.toLong() ?: 0L,
                         filePath = tempFile.absolutePath

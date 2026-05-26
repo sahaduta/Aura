@@ -7,7 +7,6 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
-import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import android.content.pm.ServiceInfo
 import com.sahaduta.telegrambackup.data.GalleryDatabase
@@ -21,33 +20,29 @@ class BackupWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
-    private fun createForegroundInfo(progress: String): ForegroundInfo {
+    private fun updateNotification(progress: String) {
         val channelId = "backup_channel"
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(channelId, "Backup Progress", NotificationManager.IMPORTANCE_LOW)
-            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setContentTitle("Telegram Media Backup")
             .setContentText(progress)
-            .setSmallIcon(android.R.drawable.ic_popup_sync) // default system sync icon
+            .setSmallIcon(android.R.drawable.ic_popup_sync)
             .setOngoing(true)
             .build()
-
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            ForegroundInfo(1, notification)
-        }
+            
+        manager.notify(1, notification)
     }
 
     override suspend fun doWork(): Result {
         val preferencesManager = PreferencesManager(context)
         
         try {
-            setForeground(createForegroundInfo("Starting backup..."))
+            updateNotification("Starting backup...")
             val database = GalleryDatabase.getDatabase(context)
             val telegramManager = TelegramManager.getInstance(context)
 
@@ -105,7 +100,7 @@ class BackupWorker(
                 val progressText = "Uploading file ${index + 1} of $totalFiles: ${media.name}"
                 Log.d("BackupWorker", progressText)
                 preferencesManager.saveSyncProgress(progressText)
-                setForeground(createForegroundInfo(progressText))
+                updateNotification(progressText)
                 val folderName = media.bucketName
 
                 // Fetch Tags and Faces for this media to create Caption
@@ -197,6 +192,10 @@ class BackupWorker(
             preferencesManager.saveSyncStatus("Success")
             preferencesManager.saveSyncProgress("Backed up $successCount of $totalFiles files successfully!")
             preferencesManager.saveSyncingActive(false)
+            
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(1) // Clear notification on success
+            
             return Result.success()
             
         } catch (e: Exception) {
@@ -204,6 +203,10 @@ class BackupWorker(
             preferencesManager.saveSyncStatus("Failed")
             preferencesManager.saveSyncError("Fatal error: ${e.javaClass.simpleName}: ${e.message}")
             preferencesManager.saveSyncingActive(false)
+            
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.cancel(1)
+            
             return Result.failure()
         }
     }

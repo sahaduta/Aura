@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import android.content.pm.ServiceInfo
 import com.sahaduta.telegrambackup.data.GalleryDatabase
 import com.sahaduta.telegrambackup.data.MediaEntity
 import kotlinx.coroutines.flow.firstOrNull
@@ -35,7 +36,11 @@ class BackupWorker(
             .setOngoing(true)
             .build()
 
-        return ForegroundInfo(1, notification)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(1, notification)
+        }
     }
 
     override suspend fun doWork(): Result {

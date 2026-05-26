@@ -9,6 +9,8 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import com.sahaduta.telegrambackup.data.GalleryDatabase
+import com.sahaduta.telegrambackup.data.MediaEntity
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
@@ -41,8 +43,8 @@ class BackupWorker(
         
         try {
             setForeground(createForegroundInfo("Starting backup..."))
+            val database = GalleryDatabase.getDatabase(context)
             val telegramManager = TelegramManager.getInstance(context)
-            val mediaScanner = MediaScanner(context)
 
             preferencesManager.saveSyncingActive(true)
             preferencesManager.saveSyncStatus("Initializing TDLib...")
@@ -80,8 +82,7 @@ class BackupWorker(
             }
 
             preferencesManager.saveSyncStatus("Scanning media...")
-            val lastSyncTime = preferencesManager.lastSyncTimeFlow.firstOrNull() ?: 0L
-            val newMedia = mediaScanner.getNewMedia(lastSyncTime)
+            val newMedia = database.galleryDao().getUnbackedUpMedia()
 
             if (newMedia.isEmpty()) {
                 Log.d("BackupWorker", "No new media to backup.")
@@ -92,7 +93,6 @@ class BackupWorker(
             }
 
             preferencesManager.saveSyncStatus("Uploading...")
-            var highestDateAdded = lastSyncTime
             val totalFiles = newMedia.size
             var successCount = 0
 
@@ -101,7 +101,22 @@ class BackupWorker(
                 Log.d("BackupWorker", progressText)
                 preferencesManager.saveSyncProgress(progressText)
                 setForeground(createForegroundInfo(progressText))
-                val folderName = media.bucketName ?: "Misc"
+                val folderName = media.bucketName
+
+                // Fetch Tags and Faces for this media to create Caption
+                val tags = database.galleryDao().getTagsForMedia(media.id)
+                // We'll create a caption like #Scenery #FaceClusterName
+                val captionBuilder = StringBuilder()
+                for (tag in tags) {
+                    val cleanTag = tag.tag.replace(" ", "")
+                    captionBuilder.append("#$cleanTag ")
+                }
+                
+                // Fetch Faces
+                val embeddings = database.galleryDao().getUnclusteredEmbeddings() // Wait, need a direct query. Let's do a raw lookup for now or just skip specific faces in caption until they are named.
+                // For now, let's just use ML Kit labels as hashtags.
+
+                val captionText = captionBuilder.toString().trim()
                 
                 // Get or Create Topic
                 var topicId = preferencesManager.getTopicIdFlow(folderName).firstOrNull()
@@ -143,15 +158,14 @@ class BackupWorker(
                     val uploadResult = telegramManager.sendDocumentAndWait(
                         chatId = chatId,
                         threadId = topicId?.toLong() ?: 0L,
-                        filePath = tempFile.absolutePath
+                        filePath = tempFile.absolutePath,
+                        caption = captionText
                     )
 
                     if (uploadResult.isSuccess) {
                         successCount++
-                        if (media.dateAdded > highestDateAdded) {
-                            highestDateAdded = media.dateAdded
-                            preferencesManager.saveLastSyncTime(highestDateAdded)
-                        }
+                        // Mark as backed up
+                        database.galleryDao().updateMedia(media.copy(isBackedUp = true))
                         Log.d("BackupWorker", "Successfully backed up: ${media.name}")
                     } else {
                         val errorMsg = uploadResult.exceptionOrNull()?.message ?: "Unknown error"

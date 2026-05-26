@@ -182,17 +182,20 @@ class TelegramManager private constructor(private val context: Context) : Client
         }
     }
 
-    suspend fun sendDocumentAndWait(chatId: Long, threadId: Long, filePath: String): Result<Boolean> = suspendCancellableCoroutine { cont ->
+    suspend fun sendDocumentAndWait(chatId: Long, threadId: Long, filePath: String, caption: String = ""): Result<Boolean> = suspendCancellableCoroutine { cont ->
         val currentClient = client
         if (currentClient == null) {
             cont.resume(Result.failure(Exception("TDLib client not initialized")))
             return@suspendCancellableCoroutine
         }
+        
+        val formattedCaption = if (caption.isNotBlank()) TdApi.FormattedText(caption, null) else null
+        
         val document = TdApi.InputMessageDocument(
             TdApi.InputFileLocal(filePath), 
             null, 
             true, // disableContentTypeDetection
-            null
+            formattedCaption
         )
         
         val request = TdApi.SendMessage(

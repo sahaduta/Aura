@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.work.*
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import com.sahaduta.telegrambackup.ui.GalleryScreen
+import com.sahaduta.telegrambackup.ui.PeopleScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppContent(telegramManager: TelegramManager) {
     val authState by telegramManager.authState.collectAsState()
@@ -64,17 +67,40 @@ fun AppContent(telegramManager: TelegramManager) {
                 CircularProgressIndicator()
             }
         }
-        AuthState.WAIT_PHONE_NUMBER -> {
-            PhoneLoginScreen(telegramManager)
-        }
-        AuthState.WAIT_CODE -> {
-            CodeInputScreen(telegramManager)
-        }
-        AuthState.WAIT_PASSWORD -> {
-            PasswordInputScreen(telegramManager)
-        }
+        AuthState.WAIT_PHONE_NUMBER -> PhoneLoginScreen(telegramManager)
+        AuthState.WAIT_CODE -> CodeInputScreen(telegramManager)
+        AuthState.WAIT_PASSWORD -> PasswordInputScreen(telegramManager)
         AuthState.AUTHENTICATED -> {
-            DashboardScreen(telegramManager)
+            var selectedTab by remember { mutableStateOf(0) }
+            val tabs = listOf("Gallery", "People", "Settings")
+            val icons = listOf(
+                androidx.compose.material.icons.Icons.Default.PhotoLibrary,
+                androidx.compose.material.icons.Icons.Default.Face,
+                androidx.compose.material.icons.Icons.Default.Settings
+            )
+
+            Scaffold(
+                bottomBar = {
+                    NavigationBar {
+                        tabs.forEachIndexed { index, title ->
+                            NavigationBarItem(
+                                icon = { Icon(icons[index], contentDescription = title) },
+                                label = { Text(title) },
+                                selected = selectedTab == index,
+                                onClick = { selectedTab = index }
+                            )
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    when (selectedTab) {
+                        0 -> GalleryScreen()
+                        1 -> PeopleScreen()
+                        2 -> DashboardScreen(telegramManager)
+                    }
+                }
+            }
         }
         AuthState.ERROR -> {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -407,16 +433,40 @@ fun DashboardScreen(telegramManager: TelegramManager) {
                 .padding(bottom = 16.dp)
         )
 
+        // Sync Interval Setting
+        val currentInterval by preferencesManager.syncIntervalFlow.collectAsState(initial = 6)
+        Text(
+            text = "Auto-Backup Schedule",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.align(Alignment.Start).padding(top = 16.dp, bottom = 8.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Sync every $currentInterval hours")
+            Slider(
+                value = currentInterval.toFloat(),
+                onValueChange = { scope.launch { preferencesManager.saveSyncInterval(it.toInt()) } },
+                valueRange = 1f..24f,
+                steps = 23,
+                modifier = Modifier.width(150.dp)
+            )
+        }
+
         Button(
             onClick = {
                 scope.launch {
                     preferencesManager.saveCredentials("", chatIdInput)
-                    schedulePeriodicBackup(context)
+                    schedulePeriodicBackup(context, currentInterval)
+                    scheduleIndexerWorker(context)
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
         ) {
-            Text("Save & Enable Auto-Backup (2GB Limit)")
+            Text("Save & Enable Auto-Backup")
         }
 
         // --- Live Sync Status Card ---
@@ -495,15 +545,25 @@ fun DashboardScreen(telegramManager: TelegramManager) {
     }
 }
 
-private fun schedulePeriodicBackup(context: android.content.Context) {
+private fun schedulePeriodicBackup(context: android.content.Context, intervalHours: Int = 6) {
     val constraints = Constraints.Builder()
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .setRequiresBatteryNotLow(true)
         .build()
-    val periodicWorkRequest = PeriodicWorkRequestBuilder<BackupWorker>(6, TimeUnit.HOURS)
+    val periodicWorkRequest = PeriodicWorkRequestBuilder<BackupWorker>(intervalHours.toLong(), TimeUnit.HOURS)
         .setConstraints(constraints).build()
     WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-        "TelegramMediaBackupPeriodic", ExistingPeriodicWorkPolicy.KEEP, periodicWorkRequest
+        "TelegramMediaBackupPeriodic", ExistingPeriodicWorkPolicy.UPDATE, periodicWorkRequest
+    )
+}
+
+private fun scheduleIndexerWorker(context: android.content.Context) {
+    val constraints = Constraints.Builder().build()
+    // Run indexer immediately
+    val oneTimeWorkRequest = OneTimeWorkRequestBuilder<GalleryIndexerWorker>()
+        .setConstraints(constraints).build()
+    WorkManager.getInstance(context).enqueueUniqueWork(
+        "TelegramMediaIndexerManual", ExistingWorkPolicy.REPLACE, oneTimeWorkRequest
     )
 }
 

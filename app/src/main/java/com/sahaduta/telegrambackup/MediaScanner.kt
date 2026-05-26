@@ -6,20 +6,12 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 
-data class MediaItem(
-    val id: Long,
-    val uri: Uri,
-    val name: String,
-    val dateAdded: Long,
-    val bucketName: String?,
-    val mimeType: String,
-    val isVideo: Boolean
-)
+import com.sahaduta.telegrambackup.data.MediaEntity
 
 class MediaScanner(private val context: Context) {
 
-    fun getNewMedia(lastSyncTime: Long): List<MediaItem> {
-        val mediaList = mutableListOf<MediaItem>()
+    fun getNewMedia(lastSyncTime: Long): List<MediaEntity> {
+        val mediaList = mutableListOf<MediaEntity>()
         
         // Scan Images
         mediaList.addAll(queryMedia(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, lastSyncTime, false))
@@ -31,8 +23,8 @@ class MediaScanner(private val context: Context) {
         return mediaList.sortedBy { it.dateAdded }
     }
 
-    private fun queryMedia(collection: Uri, lastSyncTime: Long, isVideo: Boolean): List<MediaItem> {
-        val mediaList = mutableListOf<MediaItem>()
+    private fun queryMedia(collection: Uri, lastSyncTime: Long, isVideo: Boolean): List<MediaEntity> {
+        val mediaList = mutableListOf<MediaEntity>()
 
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
@@ -72,14 +64,16 @@ class MediaScanner(private val context: Context) {
                 val contentUri: Uri = ContentUris.withAppendedId(collection, id)
 
                 mediaList.add(
-                    MediaItem(
+                    MediaEntity(
                         id = id,
-                        uri = contentUri,
+                        uriString = contentUri.toString(),
                         name = name,
                         dateAdded = dateAdded * 1000, // Convert back to milliseconds
                         bucketName = bucketName,
                         mimeType = mimeType,
-                        isVideo = isVideo
+                        isVideo = isVideo,
+                        isBackedUp = false,
+                        lastScanned = 0L
                     )
                 )
             }

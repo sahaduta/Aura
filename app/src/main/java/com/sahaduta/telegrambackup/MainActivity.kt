@@ -354,8 +354,7 @@ fun DashboardScreen(telegramManager: TelegramManager) {
                 // Avatar placeholder
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
-                        .padding(end = 16.dp),
+                        .size(48.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
@@ -368,6 +367,8 @@ fun DashboardScreen(telegramManager: TelegramManager) {
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
+                
+                Spacer(modifier = Modifier.width(16.dp))
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

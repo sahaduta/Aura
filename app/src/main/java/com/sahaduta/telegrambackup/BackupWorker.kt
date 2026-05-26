@@ -23,16 +23,17 @@ class BackupWorker(
             preferencesManager.saveSyncingActive(true)
             preferencesManager.saveSyncStatus("Initializing TDLib...")
             preferencesManager.saveSyncError("")
+            preferencesManager.saveSyncProgress("")
 
-            // Wait for TDLib auth state to resolve past INITIALIZING
-            val authState = withTimeoutOrNull(10000) {
+            // Wait for TDLib auth state to resolve past INITIALIZING (up to 15 seconds)
+            val authState = withTimeoutOrNull(15000) {
                 telegramManager.authState.first { it != AuthState.INITIALIZING }
             } ?: AuthState.INITIALIZING
 
             if (authState != AuthState.AUTHENTICATED) {
                 Log.e("BackupWorker", "TDLib is not authenticated! State: $authState")
                 preferencesManager.saveSyncStatus("Failed")
-                preferencesManager.saveSyncError("Telegram not logged in!")
+                preferencesManager.saveSyncError("Telegram not logged in! Please open the app and log in first.")
                 preferencesManager.saveSyncingActive(false)
                 return Result.failure()
             }
@@ -41,11 +42,18 @@ class BackupWorker(
             if (chatIdString.isNullOrBlank()) {
                 Log.e("BackupWorker", "Target Chat ID is missing.")
                 preferencesManager.saveSyncStatus("Failed")
-                preferencesManager.saveSyncError("Target Group Chat ID is missing.")
+                preferencesManager.saveSyncError("Target Group Chat ID is missing. Please set it in the app.")
                 preferencesManager.saveSyncingActive(false)
                 return Result.failure()
             }
-            val chatId = chatIdString.toLongOrNull() ?: return Result.failure()
+            val chatId = chatIdString.toLongOrNull()
+            if (chatId == null) {
+                Log.e("BackupWorker", "Invalid Chat ID format: $chatIdString")
+                preferencesManager.saveSyncStatus("Failed")
+                preferencesManager.saveSyncError("Invalid Chat ID format: '$chatIdString'. Must be a number like -100...")
+                preferencesManager.saveSyncingActive(false)
+                return Result.failure()
+            }
 
             preferencesManager.saveSyncStatus("Scanning media...")
             val lastSyncTime = preferencesManager.lastSyncTimeFlow.firstOrNull() ?: 0L
@@ -62,9 +70,11 @@ class BackupWorker(
             preferencesManager.saveSyncStatus("Uploading...")
             var highestDateAdded = lastSyncTime
             val totalFiles = newMedia.size
+            var successCount = 0
 
             for ((index, media) in newMedia.withIndex()) {
                 val progressText = "Uploading file ${index + 1} of $totalFiles: ${media.name}"
+                Log.d("BackupWorker", progressText)
                 preferencesManager.saveSyncProgress(progressText)
                 val folderName = media.bucketName ?: "Misc"
                 
@@ -80,16 +90,29 @@ class BackupWorker(
                             preferencesManager.saveTopicId(folderName, topicId)
                         }
                     } else {
-                        Log.e("BackupWorker", "Failed to create topic for $folderName", topicResult.exceptionOrNull())
+                        Log.e("BackupWorker", "Failed to create topic for $folderName: ${topicResult.exceptionOrNull()?.message}")
+                        // If forum topics aren't enabled on the group, proceed without topicId
                     }
                 }
 
-                val tempFile = java.io.File(context.cacheDir, media.name)
+                val tempFile = java.io.File(context.cacheDir, "backup_${System.currentTimeMillis()}_${media.name}")
                 try {
-                    context.contentResolver.openInputStream(media.uri)?.use { input ->
+                    // Copy from MediaStore URI to temp file
+                    val inputStream = context.contentResolver.openInputStream(media.uri)
+                    if (inputStream == null) {
+                        Log.w("BackupWorker", "Skipping ${media.name}: could not open input stream (file may have been deleted)")
+                        continue
+                    }
+                    inputStream.use { input ->
                         tempFile.outputStream().use { output ->
                             input.copyTo(output)
                         }
+                    }
+
+                    // Verify the temp file is not empty
+                    if (tempFile.length() == 0L) {
+                        Log.w("BackupWorker", "Skipping ${media.name}: temp file is empty")
+                        continue
                     }
                     
                     val uploadResult = telegramManager.sendDocument(
@@ -99,40 +122,42 @@ class BackupWorker(
                     )
 
                     if (uploadResult.isSuccess) {
+                        successCount++
                         if (media.dateAdded > highestDateAdded) {
                             highestDateAdded = media.dateAdded
                             preferencesManager.saveLastSyncTime(highestDateAdded)
                         }
                         Log.d("BackupWorker", "Successfully backed up: ${media.name}")
                     } else {
-                        Log.e("BackupWorker", "Failed to upload: ${media.name}", uploadResult.exceptionOrNull())
+                        val errorMsg = uploadResult.exceptionOrNull()?.message ?: "Unknown error"
+                        Log.e("BackupWorker", "Failed to upload: ${media.name} - $errorMsg")
                         preferencesManager.saveSyncStatus("Failed")
-                        preferencesManager.saveSyncError("Failed to upload: ${media.name}")
+                        preferencesManager.saveSyncError("Failed to upload ${media.name}: $errorMsg")
                         preferencesManager.saveSyncingActive(false)
                         return Result.retry()
                     }
                 } catch (e: Exception) {
-                    Log.e("BackupWorker", "File copy error: ${media.name}", e)
+                    Log.e("BackupWorker", "Error processing ${media.name}", e)
                     preferencesManager.saveSyncStatus("Failed")
-                    preferencesManager.saveSyncError("File copy error: ${e.message}")
+                    preferencesManager.saveSyncError("Error processing ${media.name}: ${e.message}")
                     preferencesManager.saveSyncingActive(false)
                     return Result.retry()
                 } finally {
                     if (tempFile.exists()) {
-                        tempFile.delete() // Clean up temp file
+                        tempFile.delete()
                     }
                 }
             }
 
             preferencesManager.saveSyncStatus("Success")
-            preferencesManager.saveSyncProgress("All files backed up successfully!")
+            preferencesManager.saveSyncProgress("Backed up $successCount of $totalFiles files successfully!")
             preferencesManager.saveSyncingActive(false)
             return Result.success()
             
         } catch (e: Exception) {
             Log.e("BackupWorker", "Fatal error in worker", e)
             preferencesManager.saveSyncStatus("Failed")
-            preferencesManager.saveSyncError("Fatal error: ${e.message}")
+            preferencesManager.saveSyncError("Fatal error: ${e.javaClass.simpleName}: ${e.message}")
             preferencesManager.saveSyncingActive(false)
             return Result.failure()
         }

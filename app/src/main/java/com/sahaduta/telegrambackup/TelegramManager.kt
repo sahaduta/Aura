@@ -64,7 +64,7 @@ class TelegramManager private constructor(private val context: Context) : Client
             }
             else -> {
                 // Handle other updates if needed
-                Log.d("TelegramManager", "Received: \${obj.javaClass.simpleName}")
+                Log.d("TelegramManager", "Received: ${obj.javaClass.simpleName}")
             }
         }
     }
@@ -110,7 +110,7 @@ class TelegramManager private constructor(private val context: Context) : Client
                 client = Client.create(this, null, null)
             }
             else -> {
-                Log.d("TelegramManager", "Unhandled auth state: \${state.javaClass.simpleName}")
+                Log.d("TelegramManager", "Unhandled auth state: ${state.javaClass.simpleName}")
             }
         }
     }
@@ -152,8 +152,13 @@ class TelegramManager private constructor(private val context: Context) : Client
     }
 
     suspend fun createForumTopic(chatId: Long, name: String): Result<Long> = suspendCoroutine { cont ->
+        val currentClient = client
+        if (currentClient == null) {
+            cont.resume(Result.failure(Exception("TDLib client not initialized")))
+            return@suspendCoroutine
+        }
         val request = TdApi.CreateForumTopic(chatId, name, false, TdApi.ForumTopicIcon())
-        client?.send(request) { result ->
+        currentClient.send(request) { result ->
             if (result is TdApi.ForumTopicInfo) {
                 cont.resume(Result.success(result.forumTopicId.toLong()))
             } else if (result is TdApi.Error) {
@@ -165,6 +170,11 @@ class TelegramManager private constructor(private val context: Context) : Client
     }
 
     suspend fun sendDocument(chatId: Long, threadId: Long, filePath: String): Result<Boolean> = suspendCoroutine { cont ->
+        val currentClient = client
+        if (currentClient == null) {
+            cont.resume(Result.failure(Exception("TDLib client not initialized")))
+            return@suspendCoroutine
+        }
         val document = TdApi.InputMessageDocument(
             TdApi.InputFileLocal(filePath), 
             null, 
@@ -181,7 +191,7 @@ class TelegramManager private constructor(private val context: Context) : Client
             document
         )
 
-        client?.send(request) { result ->
+        currentClient.send(request) { result ->
             if (result is TdApi.Message) {
                 cont.resume(Result.success(true))
             } else if (result is TdApi.Error) {
@@ -193,7 +203,12 @@ class TelegramManager private constructor(private val context: Context) : Client
     }
 
     suspend fun getMe(): Result<TdApi.User> = suspendCoroutine { cont ->
-        client?.send(TdApi.GetMe()) { result ->
+        val currentClient = client
+        if (currentClient == null) {
+            cont.resume(Result.failure(Exception("TDLib client not initialized")))
+            return@suspendCoroutine
+        }
+        currentClient.send(TdApi.GetMe()) { result ->
             if (result is TdApi.User) {
                 cont.resume(Result.success(result))
             } else if (result is TdApi.Error) {

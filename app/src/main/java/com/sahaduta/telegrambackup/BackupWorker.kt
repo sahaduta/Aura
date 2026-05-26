@@ -138,7 +138,8 @@ class BackupWorker(
                 val tempFile = java.io.File(context.cacheDir, "backup_${System.currentTimeMillis()}_${media.name}")
                 try {
                     // Copy from MediaStore URI to temp file
-                    val inputStream = context.contentResolver.openInputStream(media.uri)
+                    val contentUri = android.net.Uri.parse(media.uriString)
+                val inputStream = context.contentResolver.openInputStream(contentUri)
                     if (inputStream == null) {
                         Log.w("BackupWorker", "Skipping ${media.name}: could not open input stream (file may have been deleted)")
                         continue

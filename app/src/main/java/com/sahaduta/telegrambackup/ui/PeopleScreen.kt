@@ -18,6 +18,8 @@ import coil.request.ImageRequest
 import com.sahaduta.telegrambackup.data.FaceClusterEntity
 import com.sahaduta.telegrambackup.data.GalleryDatabase
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +142,7 @@ fun PersonThumbnail(cluster: FaceClusterEntity, onClick: () -> Unit) {
                 )
             } else {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Person,
+                    imageVector = Icons.Default.Person,
                     contentDescription = "Person",
                     tint = androidx.compose.ui.graphics.Color.Gray,
                     modifier = Modifier.size(48.dp)

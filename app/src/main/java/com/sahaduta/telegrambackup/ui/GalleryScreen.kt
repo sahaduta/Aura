@@ -16,6 +16,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.sahaduta.telegrambackup.data.GalleryDatabase
 import com.sahaduta.telegrambackup.data.MediaEntity
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.CloudUpload
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +92,7 @@ fun MediaThumbnail(media: MediaEntity) {
             if (media.isVideo) {
                 // Show video icon
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.PlayArrow,
+                    imageVector = Icons.Default.PlayArrow,
                     contentDescription = "Video",
                     tint = androidx.compose.ui.graphics.Color.White,
                     modifier = Modifier
@@ -101,7 +104,7 @@ fun MediaThumbnail(media: MediaEntity) {
             if (!media.isBackedUp) {
                 // Show pending backup icon
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.CloudUpload,
+                    imageVector = Icons.Default.CloudUpload,
                     contentDescription = "Pending Backup",
                     tint = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f),
                     modifier = Modifier

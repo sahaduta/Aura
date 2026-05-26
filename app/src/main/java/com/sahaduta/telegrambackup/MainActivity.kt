@@ -19,6 +19,10 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import com.sahaduta.telegrambackup.ui.GalleryScreen
 import com.sahaduta.telegrambackup.ui.PeopleScreen
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Settings
 
 class MainActivity : ComponentActivity() {
 
@@ -74,9 +78,9 @@ fun AppContent(telegramManager: TelegramManager) {
             var selectedTab by remember { mutableStateOf(0) }
             val tabs = listOf("Gallery", "People", "Settings")
             val icons = listOf(
-                androidx.compose.material.icons.Icons.Default.PhotoLibrary,
-                androidx.compose.material.icons.Icons.Default.Face,
-                androidx.compose.material.icons.Icons.Default.Settings
+                Icons.Default.PhotoLibrary,
+                Icons.Default.Face,
+                Icons.Default.Settings
             )
 
             Scaffold(
